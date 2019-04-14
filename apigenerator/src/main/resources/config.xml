@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<appconfig>
+	<dbType>MYSQL</dbType>
+	<driver>com.mysql.jdbc.Driver</driver>
+	<jdbcConnectionString>jdbc:mysql://localhost:3306/springbootblog
+	</jdbcConnectionString>
+	<databaseIP>localhost</databaseIP>
+	<databaseCatalog>springbootblog</databaseCatalog>
+	<databaseUsername>mrgenco</databaseUsername>
+	<databasePassword>***</databasePassword>
+	<sourceTarget>/Users/mrgenco/Documents/MRG/webapi/</sourceTarget>
+	<projectName>webapi</projectName>
+	<topLevel>com.mrg</topLevel>
+	<libPath>src/main/resources</libPath>
+	<schemaStrategy>PARTIAL</schemaStrategy>
+	<resourceFolder>src/main/resources</resourceFolder>
+	<sourceFolderName>src/main/java</sourceFolderName>
+	<dbPackageMap>
+		<map schema="DEFAULT">
+			<!-- Location of hibernate objects. ${DB} will be replaced by the schema 
+				under operation dynamically. -->
+			<objectPackage>
+				${topLevel}.${projectName}.${DB}.model
+			</objectPackage>
+
+			<!-- Location of repository objects (spring data only) -->
+			<objectTableRepoPackage>
+				${topLevel}.${projectName}.${DB}.repository
+			</objectTableRepoPackage>
+
+
+			<objectInterfacePackage skip="true">
+				${topLevel}.${projectName}.model.obj.${DB}.iface
+			</objectInterfacePackage>
+			<!-- Location of repository factory objects. -->
+			<repositoryFactoryPackage skip="true">
+				${topLevel}.${projectName}.model.obj.${DB}.repository.factory
+			</repositoryFactoryPackage>
+
+			<!-- Location of hibernate DAO objects. -->
+			<daoPackage skip="true">
+				${topLevel}.${projectName}.model.dao.${DB}
+			</daoPackage>
+			<!-- Location of hibernate DAO Implementation objects. -->
+			<daoImplPackage skip="true">
+				${topLevel}.${projectName}.model.dao.${DB}.impl
+			</daoImplPackage>
+
+			<!-- Location of hibernate enum objects. -->
+			<enumPackage skip="true" targetbase="/some/other/path">
+				${topLevel}.${projectName}.enums.db.${DB}
+			</enumPackage>
+
+			<!-- Location of class subtype enum objects. -->
+			<enumSubtypePackage skip="true">
+				${topLevel}.${projectName}.enums.subtype.${DB}
+			</enumSubtypePackage>
+
+			<!-- Location of hibernate factory objects. -->
+			<factoryPackage skip="true">
+				${topLevel}.${projectName}.factories.${DB}
+			</factoryPackage>
+			<!-- Location of repository factory objects. -->
+			<repositoryFactoryPackage skip="true">
+				${topLevel}.${projectName}.factories.${DB}
+			</repositoryFactoryPackage>
+			<!-- Location of assorted classes -->
+			<utilPackage skip="true">
+				${topLevel}.${projectName}.util
+			</utilPackage>
+
+			<!-- Location of data layer objects. -->
+			<dataPackage skip="true">
+				${topLevel}.${projectName}.services.data
+			</dataPackage>
+		</map>
+	</dbPackageMap>
+
+	<enableSpringData>true</enableSpringData>
+</appconfig>
