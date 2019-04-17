@@ -56,17 +56,19 @@ public class DataSourceController {
 			response = new ResponseEntity<>(isBadRequest,HttpStatus.BAD_REQUEST); 
 			return response;
 		}		
+		
 		try{
 			ds.setIsGenerated(false);
 			ds.setProcessDate(new Date());
 			dsRepository.save(ds);
+
+			// TODO return entities and fields as response
 			generatorService.generateEntities();
 			response = new ResponseEntity<>("SUCCESS",HttpStatus.OK);
 			
 		}catch(EntityGenerationException ex){
 			response = new ResponseEntity<>(ex.getMessage(), HttpStatus.OK);
 		}
-		
 		return response;
 	}
 
@@ -122,10 +124,8 @@ public class DataSourceController {
 
 	@RequestMapping(value = "/{id}", method = RequestMethod.GET)
 	public DataSource read(@PathVariable(value = "id") long id) throws DataSourceNotFoundException {
-		DataSource post = dsRepository.findOne(id);
-		if (post == null) {
-			throw new DataSourceNotFoundException("DS with id: " + id + " not found.");
-		}
+		DataSource post = dsRepository.findById(id).orElseThrow(() -> new DataSourceNotFoundException("DS with id: " + id + " not found."));
+		
 		return post;
 	}
 
@@ -136,11 +136,9 @@ public class DataSourceController {
 
 	@RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
 	public void delete(@PathVariable(value = "id") long id) {
-		DataSource post = dsRepository.findOne(id);
-		if (post == null) {
-			throw new DataSourceNotFoundException("DS with id: " + id + " not found.");
+		if(dsRepository.existsById(id)) {
+			dsRepository.deleteById(id);
 		}
-		dsRepository.delete(id);
 	}
 
 	@ExceptionHandler(DataSourceNotFoundException.class)

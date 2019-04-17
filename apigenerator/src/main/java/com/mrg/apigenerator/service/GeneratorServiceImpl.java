@@ -48,9 +48,9 @@ public class GeneratorServiceImpl implements GeneratorService {
 	private Invoker invoker;
 	private static final Logger log = LoggerFactory.getLogger(GeneratorServiceImpl.class);
 
-	private static final String PROJECT_ROOT_PATH = "/Users/mrgenco/Documents/MRG/webapi/src/main/java/";
-	private static final String APP_PROPERTIES_PATH = "/Users/mrgenco/Documents/MRG/webapi/src/main/resources/application.properties";
-	private static final String HIBERNATE_PROPERTIES_PATH = "/Users/mrgenco/Documents/MRG/webapi/src/main/resources/hibernate.properties";
+	private static final String PROJECT_ROOT_PATH = "/apigenerator-template/src/main/java";
+	private static final String APP_PROPERTIES_PATH = "/apigenerator-template/src/main/resources/application.properties";
+	private static final String HIBERNATE_PROPERTIES_PATH = "/apigenerator-template/src/main/resources/hibernate.properties";
 
 	@Autowired
 	public GeneratorServiceImpl(DataSourceRepository dataSourceRepository, EntitiesRepository entitiesRepository) {
@@ -95,8 +95,10 @@ public class GeneratorServiceImpl implements GeneratorService {
 
 			// CREATING ENTITIES
 			// generating entity classes by running mvn antrun:run@hbm2java
-			invocationRequest.setPomFile(new File("/Users/mrgenco/Documents/MRG/webapi/pom.xml"));
+			invocationRequest.setPomFile(new File("/apigenerator-template/pom.xml"));
 			invocationRequest.setGoals(Collections.singletonList("antrun:run@hbm2java"));
+
+			// TODO : update maven home with correct path
 			invoker.setMavenHome(new File("/usr/local/Cellar/maven/3.3.9/libexec"));
 			invoker.execute(invocationRequest);
 			log.info("entities are generated!");
@@ -109,6 +111,7 @@ public class GeneratorServiceImpl implements GeneratorService {
 		}
 	}
 	
+	// TODO : return entities with their fields and data types
 	@Override
 	public List<MEntity> findNewEntities() {
 

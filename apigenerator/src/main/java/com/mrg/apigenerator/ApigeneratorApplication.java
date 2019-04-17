@@ -11,6 +11,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter
  * @author M.Rasid Gencosmanoglu
  *
  */
+@SuppressWarnings("deprecation")
 @SpringBootApplication
 public class ApigeneratorApplication {
 	
