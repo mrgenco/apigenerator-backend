@@ -2,13 +2,13 @@
 <appconfig>
 	<dbType>MYSQL</dbType>
 	<driver>com.mysql.jdbc.Driver</driver>
-	<jdbcConnectionString>jdbc:mysql://localhost:3306/apigenerator
+	<jdbcConnectionString>jdbc:mysql://localhost:3306/springbootblog
 	</jdbcConnectionString>
 	<databaseIP>localhost</databaseIP>
-	<databaseCatalog>apigenerator</databaseCatalog>
+	<databaseCatalog>springbootblog</databaseCatalog>
 	<databaseUsername>mrgenco</databaseUsername>
 	<databasePassword>***</databasePassword>
-	<sourceTarget>/apigenerator-template</sourceTarget>
+	<sourceTarget>/Users/mrgenco/Documents/MRG/webapi/</sourceTarget>
 	<projectName>webapi</projectName>
 	<topLevel>com.mrg</topLevel>
 	<libPath>src/main/resources</libPath>

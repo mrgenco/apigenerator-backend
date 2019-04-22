@@ -6,6 +6,7 @@ import java.util.List;
 import org.apache.maven.shared.invoker.MavenInvocationException;
 
 import com.mrg.apigenerator.domain.DataSource;
+import com.mrg.apigenerator.domain.EntityInformation;
 import com.mrg.apigenerator.domain.MEntity;
 import com.mrg.apigenerator.exception.EntityGenerationException;
 
@@ -21,9 +22,9 @@ public interface GeneratorService {
 //	
 //	void delete(long id);
 	
-	void generateEntities() throws EntityGenerationException;
+	List<EntityInformation> generateEntities() throws EntityGenerationException;
 		
-	List<MEntity> findNewEntities();
+	List<EntityInformation> findNewEntities();
 
 	List<MEntity> generateRepositories(List<MEntity> newEntityList);
 

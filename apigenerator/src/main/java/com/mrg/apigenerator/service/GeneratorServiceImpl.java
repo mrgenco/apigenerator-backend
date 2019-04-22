@@ -2,13 +2,16 @@ package com.mrg.apigenerator.service;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.lang.model.element.Modifier;
 
@@ -25,7 +28,9 @@ import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 
 import com.mrg.apigenerator.domain.DataSource;
+import com.mrg.apigenerator.domain.EntityInformation;
 import com.mrg.apigenerator.domain.MEntity;
+import com.mrg.apigenerator.exception.DataSourceNotFoundException;
 import com.mrg.apigenerator.exception.EntityGenerationException;
 import com.mrg.apigenerator.repository.DataSourceRepository;
 import com.mrg.apigenerator.repository.EntitiesRepository;
@@ -48,9 +53,9 @@ public class GeneratorServiceImpl implements GeneratorService {
 	private Invoker invoker;
 	private static final Logger log = LoggerFactory.getLogger(GeneratorServiceImpl.class);
 
-	private static final String PROJECT_ROOT_PATH = "/apigenerator-template/src/main/java";
-	private static final String APP_PROPERTIES_PATH = "/apigenerator-template/src/main/resources/application.properties";
-	private static final String HIBERNATE_PROPERTIES_PATH = "/apigenerator-template/src/main/resources/hibernate.properties";
+	private static final String PROJECT_ROOT_PATH = "C:\\Users\\mehme\\git\\apigenerator-template\\apigenerator-template\\src\\main\\java";
+	private static final String APP_PROPERTIES_PATH = "C:\\Users\\mehme\\git\\apigenerator-template\\apigenerator-template\\src\\main\\resources\\application.properties";
+	private static final String HIBERNATE_PROPERTIES_PATH = "C:\\Users\\mehme\\git\\apigenerator-template\\apigenerator-template\\src\\main\\resources\\hibernate.properties";
 
 	@Autowired
 	public GeneratorServiceImpl(DataSourceRepository dataSourceRepository, EntitiesRepository entitiesRepository) {
@@ -63,7 +68,7 @@ public class GeneratorServiceImpl implements GeneratorService {
 
 	@Override
 	public DataSource update(long id, DataSource update) {
-		DataSource ds = dataSourceRepository.findOne(id);
+		DataSource ds = dataSourceRepository.findById(id).orElseThrow(() -> new DataSourceNotFoundException("DS with id: " + id + " not found."));
 		if (update.getName() != null) {
 			ds.setName(update.getName());
 		}
@@ -71,12 +76,12 @@ public class GeneratorServiceImpl implements GeneratorService {
 	}
 	
 	@Override
-	public void generateEntities() throws EntityGenerationException {
-		// TODO : findByProjectName(projectName)
+	public List<EntityInformation> generateEntities() throws EntityGenerationException {
+			
 		DataSource dataSource = dataSourceRepository.findFirstByIsGeneratedOrderByProcessDateDesc(false);
 		if (dataSource == null) {
 			log.info("DataSource is null..");
-			return;
+			return null;
 		}
 		byte[] properties = null;
 		try {
@@ -95,15 +100,17 @@ public class GeneratorServiceImpl implements GeneratorService {
 
 			// CREATING ENTITIES
 			// generating entity classes by running mvn antrun:run@hbm2java
-			invocationRequest.setPomFile(new File("/apigenerator-template/pom.xml"));
+			invocationRequest.setPomFile(new File("C:\\Users\\mehme\\git\\apigenerator-template\\apigenerator-template\\pom.xml"));
 			invocationRequest.setGoals(Collections.singletonList("antrun:run@hbm2java"));
 
 			// TODO : update maven home with correct path
-			invoker.setMavenHome(new File("/usr/local/Cellar/maven/3.3.9/libexec"));
+			invoker.setMavenHome(new File("D:\\Maven\\apache-maven-3.6.1"));
 			invoker.execute(invocationRequest);
 			log.info("entities are generated!");
 
-			Files.deleteIfExists(Paths.get(HIBERNATE_PROPERTIES_PATH));
+//			Files.deleteIfExists(Paths.get(HIBERNATE_PROPERTIES_PATH));
+			
+			return findNewEntities();
 			
 		} catch (Exception e) {
 			log.error("Error occured while generating source files : " + e.getMessage() + e.getStackTrace());
@@ -113,12 +120,12 @@ public class GeneratorServiceImpl implements GeneratorService {
 	
 	// TODO : return entities with their fields and data types
 	@Override
-	public List<MEntity> findNewEntities() {
+	public List<EntityInformation> findNewEntities() {
 
-		List<MEntity> newEntityList = new ArrayList<MEntity>();
+		List<EntityInformation> newEntityList = new ArrayList<EntityInformation>();
 //		Iterable<MEntity> iterableEntityList = entitiesRepository.findAll();
 		
-		String entityFilePath = PROJECT_ROOT_PATH + "com/mrg/webapi/model";
+		String entityFilePath = PROJECT_ROOT_PATH + "\\com\\mrg\\webapi\\model";
 		File folder = new File(entityFilePath);
 		File[] files = folder.listFiles();
 		boolean isFound = false;
@@ -126,15 +133,15 @@ public class GeneratorServiceImpl implements GeneratorService {
 		if (files != null && files.length > 0) {
 			for (File file : files) {
 				String fileName = file.getName().replaceFirst("[.][^.]+$", "");
-//				for (MEntity entity : iterableEntityList) {
-//					if (entity.getEntityName().equals(fileName)) {
-//						isFound = true;
-//						break;
-//					}
-//				}
+				
+					
+				Field[] fields = file.getClass().getDeclaredFields(); // returns all members including private members but not inherited members.
+				file.getClass().getFields();
+				
 				if (!isFound) {
-					MEntity newEntity = new MEntity(fileName, false, "No Rest API!");
-					newEntityList.add(newEntity);
+					EntityInformation entityInformation = new EntityInformation();
+//					MEntity newEntity = new MEntity(fileName, false, "No Rest API!");
+					newEntityList.add(entityInformation);
 				}
 			}
 		}
@@ -206,27 +213,33 @@ public class GeneratorServiceImpl implements GeneratorService {
 	}
 
 	private void writeToProperties(String propertyPath, byte[] properties) throws IOException {
-
-		if (propertyPath.equals(HIBERNATE_PROPERTIES_PATH)) {
-
-			File hibernatePropertiesFile = new File(HIBERNATE_PROPERTIES_PATH);
-			if (hibernatePropertiesFile.createNewFile()) {
-				log.info("hibernate.properties file is generated!");
-			} else {
-				log.info("hibernate.properties file is already exist!");
-			}
-			Files.write(hibernatePropertiesFile.toPath(), properties, StandardOpenOption.APPEND);
-
-		} 
-		if(propertyPath.equals(APP_PROPERTIES_PATH)){
+		
+		try {
 			
-			File appPropertiesFile = new File(APP_PROPERTIES_PATH);
-			if (appPropertiesFile.createNewFile()) {
-				log.info("application.properties file is generated!");
-			} else {
-				log.info("application.properties file is already exist!");
+			if (propertyPath.equals(HIBERNATE_PROPERTIES_PATH)) {
+				
+				File hibernatePropertiesFile = new File(HIBERNATE_PROPERTIES_PATH); 
+				if (hibernatePropertiesFile.createNewFile()) {
+					log.info("hibernate.properties file is generated!");
+				} else {
+					log.info("hibernate.properties file is already exist!");
+				}
+				Files.write(hibernatePropertiesFile.toPath(), properties, StandardOpenOption.APPEND);
+				
+			} 
+			if(propertyPath.equals(APP_PROPERTIES_PATH)){
+				
+				File appPropertiesFile = new File(APP_PROPERTIES_PATH);
+				if (appPropertiesFile.createNewFile()) {
+					log.info("application.properties file is generated!");
+				} else {
+					log.info("application.properties file is already exist!");
+				}
+				Files.write(appPropertiesFile.toPath(), properties, StandardOpenOption.APPEND);
 			}
-			Files.write(appPropertiesFile.toPath(), properties, StandardOpenOption.APPEND);
+		}catch(Exception ex) {
+			log.error("Error occured while writing properties: " + ex.getMessage() + ex.getStackTrace());
+			throw ex;
 		}
 
 	}
@@ -235,7 +248,7 @@ public class GeneratorServiceImpl implements GeneratorService {
 	@Override
 	public void saveNewEntities(List<MEntity> newEntityList) {
 
-		entitiesRepository.save(newEntityList);
+		entitiesRepository.saveAll(newEntityList);
 		
 	}
 

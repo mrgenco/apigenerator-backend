@@ -102,7 +102,8 @@ public class DataSource implements Serializable{
 				+"hibernate.connection.url="+this.getUrl()+"\n"	
 				+"hibernate.connection.username="+this.getUsername()+"\n"
 				+"hibernate.connection.password="+this.getPassword()+"\n"
-				+"hibernate.dialect="+"org.hibernate.dialect.MySQLDialect"+"\n";
+				+"hibernate.dialect=org.hibernate.dialect.MySQLDialect"+"\n"
+				+"hibernate.id.new_generator_mappings=false";
 		return properties.getBytes();
 	}
 	

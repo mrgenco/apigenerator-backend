@@ -2,6 +2,7 @@ package com.mrg.apigenerator.controller;
 
 import java.io.IOException;
 import java.util.Date;
+import java.util.List;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.mrg.apigenerator.domain.DataSource;
+import com.mrg.apigenerator.domain.EntityInformation;
 import com.mrg.apigenerator.domain.MEntity;
 import com.mrg.apigenerator.exception.DataSourceNotFoundException;
 import com.mrg.apigenerator.exception.EntityGenerationException;
@@ -47,52 +49,37 @@ public class DataSourceController {
 	/***************************************/
 	// CREATE DATASOURCE AND CREATE ENTITIES
 	@RequestMapping(value = "/", method = RequestMethod.POST)
-	public ResponseEntity<String> create(@RequestBody DataSource ds) {
+	public ResponseEntity<?> create(@RequestBody DataSource ds) {
 		
-		ResponseEntity<String> response;
+		List<EntityInformation> entityInformationList;
 		
 		String isBadRequest = isValid(ds); 
 		if(!isBadRequest.isEmpty()){
-			response = new ResponseEntity<>(isBadRequest,HttpStatus.BAD_REQUEST); 
-			return response;
+			return new ResponseEntity<>(isBadRequest,HttpStatus.BAD_REQUEST);
 		}		
 		
 		try{
 			ds.setIsGenerated(false);
 			ds.setProcessDate(new Date());
 			dsRepository.save(ds);
-
-			// TODO return entities and fields as response
-			generatorService.generateEntities();
-			response = new ResponseEntity<>("SUCCESS",HttpStatus.OK);
+			
+			entityInformationList = generatorService.generateEntities();
+			
+			return  new ResponseEntity<List<EntityInformation>>(entityInformationList, HttpStatus.OK);
 			
 		}catch(EntityGenerationException ex){
-			response = new ResponseEntity<>(ex.getMessage(), HttpStatus.OK);
+			return new ResponseEntity<>(ex.getMessage(), HttpStatus.OK);
 		}
-		return response;
 	}
 
-	private String isValid(DataSource ds) {
-		
-		if(ds.getUrl().isEmpty())
-			return "DataSource url can not be empty";
-		if(ds.getUsername().isEmpty())
-			return "DataSource username can not be empty";
-		if(ds.getPassword().isEmpty())
-			return "DataSource password can not be empty";
-		if(ds.getProjectName().isEmpty())
-			return "ProjectName can not be empty";
-		if(ds.getName().isEmpty())
-			return "DataSource name can not be empty";
-		return "";		
-	}
+
 
 	// RETURN NEW ENTITIES
 	// Scans datasource and returns newly created entities
 	@RequestMapping(value = "/findNewEntities", method = RequestMethod.GET)
-	public Iterable<MEntity> findNewEntities() {
+	public ResponseEntity<?> findNewEntities() {
 		// find and return newly generated entities
-		return generatorService.findNewEntities();
+		return new ResponseEntity<List<EntityInformation>>(generatorService.findNewEntities(), HttpStatus.OK);
 	}
 
 	/*******************************/
@@ -106,7 +93,7 @@ public class DataSourceController {
 	public String generateAPIs() throws MavenInvocationException, IOException {
 
 		// generate repository code
-		generatorService.generateRepositories(generatorService.findNewEntities());
+//		generatorService.generateRepositories(generatorService.findNewEntities());
 
 		// deploy
 		generatorService.deploy();
@@ -145,5 +132,21 @@ public class DataSourceController {
 	public void handleDSNotFound(DataSourceNotFoundException exception, HttpServletResponse response)
 			throws IOException {
 		response.sendError(HttpStatus.NOT_FOUND.value(), exception.getMessage());
+	}
+	
+	
+	private String isValid(DataSource ds) {
+		
+		if(ds.getUrl().isEmpty())
+			return "DataSource url can not be empty";
+		if(ds.getUsername().isEmpty())
+			return "DataSource username can not be empty";
+		if(ds.getPassword().isEmpty())
+			return "DataSource password can not be empty";
+		if(ds.getProjectName().isEmpty())
+			return "ProjectName can not be empty";
+		if(ds.getName().isEmpty())
+			return "DataSource name can not be empty";
+		return "";		
 	}
 }
