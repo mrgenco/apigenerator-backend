@@ -26,6 +26,7 @@ import org.springframework.stereotype.Service;
 
 import com.mrg.apigenerator.domain.DataSource;
 import com.mrg.apigenerator.domain.MEntity;
+import com.mrg.apigenerator.exception.DataSourceNotFoundException;
 import com.mrg.apigenerator.exception.EntityGenerationException;
 import com.mrg.apigenerator.repository.DataSourceRepository;
 import com.mrg.apigenerator.repository.EntitiesRepository;
@@ -63,7 +64,7 @@ public class GeneratorServiceImpl implements GeneratorService {
 
 	@Override
 	public DataSource update(long id, DataSource update) {
-		DataSource ds = dataSourceRepository.findOne(id);
+		DataSource ds = dataSourceRepository.findById(id).orElseThrow(() -> new DataSourceNotFoundException("DS with id: " + id + " not found."));
 		if (update.getName() != null) {
 			ds.setName(update.getName());
 		}
@@ -99,7 +100,7 @@ public class GeneratorServiceImpl implements GeneratorService {
 			invocationRequest.setGoals(Collections.singletonList("antrun:run@hbm2java"));
 
 			// TODO : update maven home with correct path
-			invoker.setMavenHome(new File("/usr/local/Cellar/maven/3.3.9/libexec"));
+			invoker.setMavenHome(new File("D:\\Maven\\apache-maven-3.6.1"));
 			invoker.execute(invocationRequest);
 			log.info("entities are generated!");
 
@@ -235,7 +236,7 @@ public class GeneratorServiceImpl implements GeneratorService {
 	@Override
 	public void saveNewEntities(List<MEntity> newEntityList) {
 
-		entitiesRepository.save(newEntityList);
+		entitiesRepository.saveAll(newEntityList);
 		
 	}
 
