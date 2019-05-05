@@ -93,6 +93,8 @@ public class DataSource implements Serializable{
 				  +this.name+".datasource.username="+this.username+"\n"
 				  +this.name+".datasource.password="+this.password+"\n"
 				  +this.name+".datasource.driver-class-name="+"com.mysql.jdbc.Driver"+"\n"
+				  +this.name+".jpa.properties.hibernate.dialect = org.hibernate.dialect.MySQL5Dialect" +"\n"
+				  +this.name+".jpa.properties.hibernate.id.new_generator_mappings=false" +"\n"
 				  +"server.port=8080"+"\n\n\n";
 		return properties.getBytes();
 	}

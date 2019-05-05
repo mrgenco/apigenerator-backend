@@ -1,11 +1,11 @@
 package com.mrg.apigenerator.domain;
 
-import java.util.Map;
+import java.util.HashMap;
 
 public class EntityInformation {
 	
 	private String entityName;
-	private Map<String, String> fields;
+	private HashMap<String, String> fields;
 	/**
 	 * @return the entityName
 	 */
@@ -21,13 +21,13 @@ public class EntityInformation {
 	/**
 	 * @return the fields
 	 */
-	public Map<String, String> getFields() {
+	public HashMap<String, String> getFields() {
 		return fields;
 	}
 	/**
 	 * @param fields the fields to set
 	 */
-	public void setFields(Map<String, String> fields) {
+	public void setFields(HashMap<String, String> fields) {
 		this.fields = fields;
 	}
 

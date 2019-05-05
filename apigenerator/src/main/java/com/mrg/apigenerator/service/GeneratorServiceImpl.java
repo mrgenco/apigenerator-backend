@@ -3,6 +3,9 @@ package com.mrg.apigenerator.service;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -11,9 +14,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import javax.lang.model.element.Modifier;
+import javax.tools.JavaCompiler;
+import javax.tools.ToolProvider;
 
 import org.apache.maven.shared.invoker.DefaultInvocationRequest;
 import org.apache.maven.shared.invoker.DefaultInvoker;
@@ -54,6 +58,7 @@ public class GeneratorServiceImpl implements GeneratorService {
 	private static final Logger log = LoggerFactory.getLogger(GeneratorServiceImpl.class);
 
 	private static final String PROJECT_ROOT_PATH = "C:\\Users\\mehme\\git\\apigenerator-template\\apigenerator-template\\src\\main\\java";
+	private static final String ENTITY_ROOT_PATH = "C:\\Users\\mehme\\git\\apigenerator-template\\apigenerator-template\\src\\main\\java\\com\\mrg\\webapi\\model";
 	private static final String APP_PROPERTIES_PATH = "C:\\Users\\mehme\\git\\apigenerator-template\\apigenerator-template\\src\\main\\resources\\application.properties";
 	private static final String HIBERNATE_PROPERTIES_PATH = "C:\\Users\\mehme\\git\\apigenerator-template\\apigenerator-template\\src\\main\\resources\\hibernate.properties";
 
@@ -65,19 +70,19 @@ public class GeneratorServiceImpl implements GeneratorService {
 		this.invoker = new DefaultInvoker();
 	}
 
-
 	@Override
 	public DataSource update(long id, DataSource update) {
-		DataSource ds = dataSourceRepository.findById(id).orElseThrow(() -> new DataSourceNotFoundException("DS with id: " + id + " not found."));
+		DataSource ds = dataSourceRepository.findById(id)
+				.orElseThrow(() -> new DataSourceNotFoundException("DS with id: " + id + " not found."));
 		if (update.getName() != null) {
 			ds.setName(update.getName());
 		}
 		return dataSourceRepository.save(ds);
 	}
-	
+
 	@Override
 	public List<EntityInformation> generateEntities() throws EntityGenerationException {
-			
+
 		DataSource dataSource = dataSourceRepository.findFirstByIsGeneratedOrderByProcessDateDesc(false);
 		if (dataSource == null) {
 			log.info("DataSource is null..");
@@ -86,21 +91,22 @@ public class GeneratorServiceImpl implements GeneratorService {
 		byte[] properties = null;
 		try {
 			// CREATING APP.PROPERTIES
-			// writing datasource infos to the application.properties file
+			// writing datasource info to the application.properties for Spring
 			Files.deleteIfExists(Paths.get(APP_PROPERTIES_PATH));
 			properties = dataSource.getAppProperties();
 			writeToProperties(APP_PROPERTIES_PATH, properties);
 			log.info("application.properties file is generated!");
 
 			// CREATING HIBERNATE.PROPERTIES
-			// writing datasource infos to the hibernate.properties file
+			// writing datasource info to the hibernate.properties for Hibernate
 			properties = dataSource.getHibernateProperties();
 			writeToProperties(HIBERNATE_PROPERTIES_PATH, properties);
 			log.info("hibernate.properties file is generated!");
 
 			// CREATING ENTITIES
 			// generating entity classes by running mvn antrun:run@hbm2java
-			invocationRequest.setPomFile(new File("C:\\Users\\mehme\\git\\apigenerator-template\\apigenerator-template\\pom.xml"));
+			invocationRequest.setPomFile(
+					new File("C:\\Users\\mehme\\git\\apigenerator-template\\apigenerator-template\\pom.xml"));
 			invocationRequest.setGoals(Collections.singletonList("antrun:run@hbm2java"));
 
 			// TODO : update maven home with correct path
@@ -109,60 +115,78 @@ public class GeneratorServiceImpl implements GeneratorService {
 			log.info("entities are generated!");
 
 //			Files.deleteIfExists(Paths.get(HIBERNATE_PROPERTIES_PATH));
-			
+
 			return findNewEntities();
-			
+
 		} catch (Exception e) {
 			log.error("Error occured while generating source files : " + e.getMessage() + e.getStackTrace());
 			throw new EntityGenerationException("Error occured while generating source files");
 		}
 	}
-	
+
 	// TODO : return entities with their fields and data types
 	@Override
 	public List<EntityInformation> findNewEntities() {
 
 		List<EntityInformation> newEntityList = new ArrayList<EntityInformation>();
-//		Iterable<MEntity> iterableEntityList = entitiesRepository.findAll();
-		
-		String entityFilePath = PROJECT_ROOT_PATH + "\\com\\mrg\\webapi\\model";
-		File folder = new File(entityFilePath);
-		File[] files = folder.listFiles();
-		boolean isFound = false;
+		File projectRootFolder = new File(PROJECT_ROOT_PATH);
+		File entityRootFolder = new File(ENTITY_ROOT_PATH);
+		File[] files = entityRootFolder.listFiles();
 
 		if (files != null && files.length > 0) {
 			for (File file : files) {
+				
+				EntityInformation entity = new EntityInformation();
 				String fileName = file.getName().replaceFirst("[.][^.]+$", "");
 				
+				ClassLoader cl;
+				Class cls;
+				URL entityRootFolderUrl;
+				try {
 					
-				Field[] fields = file.getClass().getDeclaredFields(); // returns all members including private members but not inherited members.
-				file.getClass().getFields();
-				
-				if (!isFound) {
-					EntityInformation entityInformation = new EntityInformation();
-//					MEntity newEntity = new MEntity(fileName, false, "No Rest API!");
-					newEntityList.add(entityInformation);
-				}
+					// Compiling .java to .class files
+					JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+					compiler.run(null, null, null, file.getPath());
+					
+					// Loading .class files
+				    entityRootFolderUrl = projectRootFolder.toURI().toURL(); 
+				    URL[] urls = new URL[] { entityRootFolderUrl };
+					cl = new URLClassLoader(urls);
+					cls = cl.loadClass("com.mrg.webapi.model."+fileName);
+					
+					// Getting fields of loaded classes
+					Field[] fields = cls.getDeclaredFields(); 
+					HashMap<String, String> entityFields = new HashMap<>();
+					for (Field entityField : fields) {
+						entityFields.put(entityField.getName(), entityField.getType().toString());
+					}
+					entity.setEntityName(fileName);
+					entity.setFields(entityFields);
+					
+					newEntityList.add(entity);
+					
+				} catch (MalformedURLException | ClassNotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} 
 			}
 		}
 		return newEntityList;
 	}
-	
 
 	@Override
 	public List<MEntity> generateRepositories(List<MEntity> newEntityList) {
-		
+
 		List<MEntity> entityList = new ArrayList<MEntity>();
 		try {
 			for (MEntity entity : newEntityList) {
 				// Generating repository source files for each entity
-				String serviceName = entity.getEntityName()+"Repository";
+				String serviceName = entity.getEntityName() + "Repository";
 				TypeSpec entityRepository = TypeSpec.interfaceBuilder(serviceName).addAnnotation(Repository.class)
 						.addModifiers(Modifier.PUBLIC)
-						.addSuperinterface(ParameterizedTypeName
-						.get(ClassName.get(PagingAndSortingRepository.class),
-							 ClassName.get("com.mrg.webapi.model", entity.getEntityName()),
-							 ClassName.get(Long.class)))
+						.addSuperinterface(ParameterizedTypeName.get(ClassName.get(PagingAndSortingRepository.class),
+								ClassName.get("com.mrg.webapi.model", entity.getEntityName()),
+								ClassName.get(Long.class)))
 						.build();
 				Path filePath = Paths.get(PROJECT_ROOT_PATH);
 				JavaFile javaFile = JavaFile.builder("com.mrg.webapi.repository", entityRepository).build();
@@ -172,20 +196,20 @@ public class GeneratorServiceImpl implements GeneratorService {
 				entityList.add(entity);
 
 				log.info(entity.getEntityName() + "Repository is generated...");
-			}		
+			}
 			saveNewEntities(entityList);
 			return entityList;
-			
+
 		} catch (Exception ex) {
 			log.error("Error occured while deploying application : " + ex.getMessage() + ex.getStackTrace());
 		}
 		return entityList;
 
 	}
-	
+
 	@Override
 	public void deploy() throws MavenInvocationException, IOException {
-		
+
 		// TODO : findByProjectName(projectName)
 		DataSource dataSource = dataSourceRepository.findFirstByIsGeneratedOrderByProcessDateDesc(false);
 		if (dataSource == null) {
@@ -200,8 +224,8 @@ public class GeneratorServiceImpl implements GeneratorService {
 		// Updating datasource info by setting generated column true
 		dataSource.setIsGenerated(true);
 		dataSourceRepository.save(dataSource);
-		
-		// TODO : Setup a CI/CD pipeline, instead of generating and executing a fat jar.		
+
+		// TODO : Setup a CI/CD pipeline, instead of generating and executing a fat jar.
 		// Generating a fat jar for webapi
 		invocationRequest.setGoals(Collections.singletonList("package"));
 		invoker.execute(invocationRequest);
@@ -209,26 +233,26 @@ public class GeneratorServiceImpl implements GeneratorService {
 		// Executing webapi jar
 		Runtime.getRuntime().exec("java -jar /Users/mrgenco/Documents/MRG/webapi/target/webapi-0.0.1.jar");
 		log.info("webapi application is running..");
-		
+
 	}
 
 	private void writeToProperties(String propertyPath, byte[] properties) throws IOException {
-		
+
 		try {
-			
+
 			if (propertyPath.equals(HIBERNATE_PROPERTIES_PATH)) {
-				
-				File hibernatePropertiesFile = new File(HIBERNATE_PROPERTIES_PATH); 
+
+				File hibernatePropertiesFile = new File(HIBERNATE_PROPERTIES_PATH);
 				if (hibernatePropertiesFile.createNewFile()) {
 					log.info("hibernate.properties file is generated!");
 				} else {
 					log.info("hibernate.properties file is already exist!");
 				}
 				Files.write(hibernatePropertiesFile.toPath(), properties, StandardOpenOption.APPEND);
-				
-			} 
-			if(propertyPath.equals(APP_PROPERTIES_PATH)){
-				
+
+			}
+			if (propertyPath.equals(APP_PROPERTIES_PATH)) {
+
 				File appPropertiesFile = new File(APP_PROPERTIES_PATH);
 				if (appPropertiesFile.createNewFile()) {
 					log.info("application.properties file is generated!");
@@ -237,26 +261,23 @@ public class GeneratorServiceImpl implements GeneratorService {
 				}
 				Files.write(appPropertiesFile.toPath(), properties, StandardOpenOption.APPEND);
 			}
-		}catch(Exception ex) {
+		} catch (Exception ex) {
 			log.error("Error occured while writing properties: " + ex.getMessage() + ex.getStackTrace());
 			throw ex;
 		}
 
 	}
 
-
 	@Override
 	public void saveNewEntities(List<MEntity> newEntityList) {
 
 		entitiesRepository.saveAll(newEntityList);
-		
+
 	}
 
 	@Override
 	public Iterable<MEntity> findAllEntities() {
 		return entitiesRepository.findAll();
 	}
-
-	
 
 }
