@@ -28,19 +28,25 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.repository.PagingAndSortingRepository;
+import org.springframework.data.repository.query.Param;
+import org.springframework.data.rest.core.annotation.RepositoryRestResource;
 import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 
 import com.mrg.apigenerator.domain.DataSource;
 import com.mrg.apigenerator.domain.EntityInformation;
+import com.mrg.apigenerator.domain.Filter;
 import com.mrg.apigenerator.domain.MEntity;
 import com.mrg.apigenerator.exception.DataSourceNotFoundException;
 import com.mrg.apigenerator.exception.EntityGenerationException;
 import com.mrg.apigenerator.repository.DataSourceRepository;
 import com.mrg.apigenerator.repository.EntitiesRepository;
+import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.JavaFile;
+import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
+import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 
 /**
@@ -135,40 +141,40 @@ public class GeneratorServiceImpl implements GeneratorService {
 
 		if (files != null && files.length > 0) {
 			for (File file : files) {
-				
+
 				EntityInformation entity = new EntityInformation();
 				String fileName = file.getName().replaceFirst("[.][^.]+$", "");
-				
+
 				ClassLoader cl;
 				Class cls;
 				URL entityRootFolderUrl;
 				try {
-					
+
 					// Compiling .java to .class files
 					JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
 					compiler.run(null, null, null, file.getPath());
-					
+
 					// Loading .class files
-				    entityRootFolderUrl = projectRootFolder.toURI().toURL(); 
-				    URL[] urls = new URL[] { entityRootFolderUrl };
+					entityRootFolderUrl = projectRootFolder.toURI().toURL();
+					URL[] urls = new URL[] { entityRootFolderUrl };
 					cl = new URLClassLoader(urls);
-					cls = cl.loadClass("com.mrg.webapi.model."+fileName);
-					
+					cls = cl.loadClass("com.mrg.webapi.model." + fileName);
+
 					// Getting fields of loaded classes
-					Field[] fields = cls.getDeclaredFields(); 
+					Field[] fields = cls.getDeclaredFields();
 					HashMap<String, String> entityFields = new HashMap<>();
 					for (Field entityField : fields) {
-						entityFields.put(entityField.getName(), entityField.getType().toString());
+						entityFields.put(entityField.getName(), entityField.getType().getName().toString());
 					}
 					entity.setEntityName(fileName);
 					entity.setFields(entityFields);
-					
+
 					newEntityList.add(entity);
-					
+
 				} catch (MalformedURLException | ClassNotFoundException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
-				} 
+				}
 			}
 		}
 		return newEntityList;
@@ -182,8 +188,9 @@ public class GeneratorServiceImpl implements GeneratorService {
 			for (MEntity entity : newEntityList) {
 				// Generating repository source files for each entity
 				String serviceName = entity.getEntityName() + "Repository";
-				TypeSpec entityRepository = TypeSpec.interfaceBuilder(serviceName).addAnnotation(Repository.class)
-						.addModifiers(Modifier.PUBLIC)
+				TypeSpec entityRepository = TypeSpec.interfaceBuilder(serviceName)
+						.addAnnotation(RepositoryRestResource.class).addModifiers(Modifier.PUBLIC)
+						.addMethods(createMethods(entity))
 						.addSuperinterface(ParameterizedTypeName.get(ClassName.get(PagingAndSortingRepository.class),
 								ClassName.get("com.mrg.webapi.model", entity.getEntityName()),
 								ClassName.get(Long.class)))
@@ -205,6 +212,32 @@ public class GeneratorServiceImpl implements GeneratorService {
 		}
 		return entityList;
 
+	}
+
+	private Iterable<MethodSpec> createMethods(MEntity entity) {
+		
+		List<MethodSpec> methodList = new ArrayList<MethodSpec>();
+
+		for (Filter filter : entity.getFilterList()) {
+			if (filter.getName().equals("and")) {
+				ClassName model = ClassName.get("com.mrg.webapi.model", entity.getEntityName());
+				ClassName list = ClassName.get("java.util", "List");
+				TypeName listOfEntities = ParameterizedTypeName.get(list, model);
+				MethodSpec andMethod = MethodSpec
+						.methodBuilder("findBy" + filter.getFields()[0] + "And" + filter.getFields()[1])
+						.returns(listOfEntities).addParameter(String.class, filter.getFields()[0].toLowerCase())
+						.addAnnotation(AnnotationSpec.builder(Param.class)
+								.addMember(filter.getFields()[0].toLowerCase(), null).build())
+
+						.addParameter(String.class, filter.getFields()[1].toLowerCase()).addAnnotation(AnnotationSpec
+								.builder(Param.class).addMember(filter.getFields()[0].toLowerCase(), null).build())
+						.build();
+				methodList.add(andMethod);
+			}
+		}
+		
+		return methodList;
+		
 	}
 
 	@Override

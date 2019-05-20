@@ -1,6 +1,7 @@
 package com.mrg.apigenerator.domain;
 
 import java.io.Serializable;
+import java.util.List;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -11,13 +12,12 @@ import javax.persistence.Id;
 public class MEntity implements Serializable{
 	
 	private static final long serialVersionUID = 1L;
-	
-	
-		
+			
 	@Id
 	@GeneratedValue(strategy=GenerationType.AUTO)
 	private Long Id;
 	private String entityName;
+	private List<Filter> filterList;
 	private String serviceName;
 	private boolean serviceExist; 
 	
@@ -53,5 +53,19 @@ public class MEntity implements Serializable{
 
 	public void setId(Long id) {
 		Id = id;
+	}
+
+	/**
+	 * @return the filterList
+	 */
+	public List<Filter> getFilterList() {
+		return filterList;
+	}
+
+	/**
+	 * @param filterList the filterList to set
+	 */
+	public void setFilterList(List<Filter> filterList) {
+		this.filterList = filterList;
 	}
 }
