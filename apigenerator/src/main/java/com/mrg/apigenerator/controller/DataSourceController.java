@@ -89,25 +89,17 @@ public class DataSourceController {
 	// generate repository code, deploy it,
 	// set isServiceExist property to true
 	// for each newly created entity
-	@RequestMapping(value = "/generateAPIs", method = RequestMethod.GET)
-	public String generateAPIs() throws MavenInvocationException, IOException {
+	@RequestMapping(value = "/generateAPIs", method = RequestMethod.POST)
+	public String generateAPIs(@RequestBody List<MEntity> entityList) throws MavenInvocationException, IOException {
 
 		// generate repository code
-//		generatorService.generateRepositories(generatorService.findNewEntities());
-
-		// deploy
-		generatorService.deploy();
+		generatorService.generateRepositories(entityList);
+		
 
 		return "success";
 	}
 	
 	
-	// SHOW ALL ENTITIES
-	// retrieves created entities from datasource
-	@RequestMapping(value = "/showAllEntities", method = RequestMethod.GET)
-	public Iterable<MEntity> listEntities() {
-		return generatorService.findAllEntities();
-	}
 
 	@RequestMapping(value = "/{id}", method = RequestMethod.GET)
 	public DataSource read(@PathVariable(value = "id") long id) throws DataSourceNotFoundException {

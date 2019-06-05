@@ -30,7 +30,7 @@ public interface GeneratorService {
 
 	void deploy() throws MavenInvocationException, IOException;
 
-	void saveNewEntities(List<MEntity> newEntityList);
-
-	Iterable<MEntity> findAllEntities();
+//	void saveNewEntities(List<MEntity> newEntityList);
+//
+//	Iterable<MEntity> findAllEntities();
 }

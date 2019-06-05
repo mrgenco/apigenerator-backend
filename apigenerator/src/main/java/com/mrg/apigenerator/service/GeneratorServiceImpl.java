@@ -28,9 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.repository.PagingAndSortingRepository;
-import org.springframework.data.repository.query.Param;
 import org.springframework.data.rest.core.annotation.RepositoryRestResource;
-import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 
 import com.mrg.apigenerator.domain.DataSource;
@@ -40,8 +38,6 @@ import com.mrg.apigenerator.domain.MEntity;
 import com.mrg.apigenerator.exception.DataSourceNotFoundException;
 import com.mrg.apigenerator.exception.EntityGenerationException;
 import com.mrg.apigenerator.repository.DataSourceRepository;
-import com.mrg.apigenerator.repository.EntitiesRepository;
-import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
@@ -57,7 +53,7 @@ import com.squareup.javapoet.TypeSpec;
 public class GeneratorServiceImpl implements GeneratorService {
 
 	private DataSourceRepository dataSourceRepository;
-	private EntitiesRepository entitiesRepository;
+//	private EntitiesRepository entitiesRepository;
 
 	private InvocationRequest invocationRequest;
 	private Invoker invoker;
@@ -69,9 +65,9 @@ public class GeneratorServiceImpl implements GeneratorService {
 	private static final String HIBERNATE_PROPERTIES_PATH = "C:\\Users\\mehme\\git\\apigenerator-template\\apigenerator-template\\src\\main\\resources\\hibernate.properties";
 
 	@Autowired
-	public GeneratorServiceImpl(DataSourceRepository dataSourceRepository, EntitiesRepository entitiesRepository) {
+	public GeneratorServiceImpl(DataSourceRepository dataSourceRepository) {
 		this.dataSourceRepository = dataSourceRepository;
-		this.entitiesRepository = entitiesRepository;
+//		this.entitiesRepository = entitiesRepository;
 		this.invocationRequest = new DefaultInvocationRequest();
 		this.invoker = new DefaultInvoker();
 	}
@@ -179,9 +175,10 @@ public class GeneratorServiceImpl implements GeneratorService {
 		}
 		return newEntityList;
 	}
-
+	
+	// TODO : database vendor a göre repository id değeri değişebilir mi? (MySql -> Integer, Oracle -> Long)
 	@Override
-	public List<MEntity> generateRepositories(List<MEntity> newEntityList) {
+	public List<MEntity> generateRepositories(List<MEntity> newEntityList /* String databaseVendor*/) {
 
 		List<MEntity> entityList = new ArrayList<MEntity>();
 		try {
@@ -189,22 +186,20 @@ public class GeneratorServiceImpl implements GeneratorService {
 				// Generating repository source files for each entity
 				String serviceName = entity.getEntityName() + "Repository";
 				TypeSpec entityRepository = TypeSpec.interfaceBuilder(serviceName)
-						.addAnnotation(RepositoryRestResource.class).addModifiers(Modifier.PUBLIC)
+						.addAnnotation(RepositoryRestResource.class)
+						.addModifiers(Modifier.PUBLIC)
 						.addMethods(createMethods(entity))
 						.addSuperinterface(ParameterizedTypeName.get(ClassName.get(PagingAndSortingRepository.class),
-								ClassName.get("com.mrg.webapi.model", entity.getEntityName()),
-								ClassName.get(Long.class)))
+										ClassName.get("com.mrg.webapi.model", entity.getEntityName()),
+										ClassName.get(Integer.class)))
 						.build();
 				Path filePath = Paths.get(PROJECT_ROOT_PATH);
 				JavaFile javaFile = JavaFile.builder("com.mrg.webapi.repository", entityRepository).build();
 				javaFile.writeTo(filePath);
-				entity.setServiceName(serviceName);
-				entity.setServiceExist(true);
 				entityList.add(entity);
 
 				log.info(entity.getEntityName() + "Repository is generated...");
 			}
-			saveNewEntities(entityList);
 			return entityList;
 
 		} catch (Exception ex) {
@@ -219,19 +214,19 @@ public class GeneratorServiceImpl implements GeneratorService {
 		List<MethodSpec> methodList = new ArrayList<MethodSpec>();
 
 		for (Filter filter : entity.getFilterList()) {
-			if (filter.getName().equals("and")) {
+			if (filter.getName().equals("and") || filter.getName().equals("or")) {
 				ClassName model = ClassName.get("com.mrg.webapi.model", entity.getEntityName());
 				ClassName list = ClassName.get("java.util", "List");
 				TypeName listOfEntities = ParameterizedTypeName.get(list, model);
+				
 				MethodSpec andMethod = MethodSpec
 						.methodBuilder("findBy" + filter.getFields()[0] + "And" + filter.getFields()[1])
-						.returns(listOfEntities).addParameter(String.class, filter.getFields()[0].toLowerCase())
-						.addAnnotation(AnnotationSpec.builder(Param.class)
-								.addMember(filter.getFields()[0].toLowerCase(), null).build())
-
-						.addParameter(String.class, filter.getFields()[1].toLowerCase()).addAnnotation(AnnotationSpec
-								.builder(Param.class).addMember(filter.getFields()[0].toLowerCase(), null).build())
-						.build();
+						.returns(listOfEntities)
+						.addParameter(String.class, filter.getFields()[0].toLowerCase())
+//						.addAnnotation(AnnotationSpec.builder(Param.class).addMember(filter.getFields()[0].toLowerCase(), null).build())
+						.addParameter(String.class, filter.getFields()[1].toLowerCase())
+//						.addAnnotation(AnnotationSpec.builder(Param.class).addMember(filter.getFields()[0].toLowerCase(), null).build())
+						.addModifiers(Modifier.ABSTRACT, Modifier.PUBLIC).build();
 				methodList.add(andMethod);
 			}
 		}
@@ -301,16 +296,16 @@ public class GeneratorServiceImpl implements GeneratorService {
 
 	}
 
-	@Override
-	public void saveNewEntities(List<MEntity> newEntityList) {
-
-		entitiesRepository.saveAll(newEntityList);
-
-	}
-
-	@Override
-	public Iterable<MEntity> findAllEntities() {
-		return entitiesRepository.findAll();
-	}
+//	@Override
+//	public void saveNewEntities(List<MEntity> newEntityList) {
+//
+//		entitiesRepository.saveAll(newEntityList);
+//
+//	}
+//
+//	@Override
+//	public Iterable<MEntity> findAllEntities() {
+//		return entitiesRepository.findAll();
+//	}
 
 }
