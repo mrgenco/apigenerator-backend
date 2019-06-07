@@ -31,7 +31,7 @@ public class DataSourceController {
 
 	private GeneratorService generatorService;
 	private DataSourceRepository dsRepository;
-
+	private static final String ENTITY_ROOT_PATH = "C:\\Users\\mehme\\git\\apigenerator-template\\apigenerator-template\\src\\main\\java\\com\\mrg\\webapi\\model";
 
 	@Autowired
 	public DataSourceController(GeneratorService generatorService, DataSourceRepository dataSourceRepo) {
@@ -63,7 +63,7 @@ public class DataSourceController {
 			ds.setProcessDate(new Date());
 			dsRepository.save(ds);
 			
-			entityInformationList = generatorService.generateEntities();
+			entityInformationList = generatorService.generateEntities(ENTITY_ROOT_PATH, "pom.xml", "com.mrg.webapi.model.");
 			
 			return  new ResponseEntity<List<EntityInformation>>(entityInformationList, HttpStatus.OK);
 			
@@ -79,7 +79,7 @@ public class DataSourceController {
 	@RequestMapping(value = "/findNewEntities", method = RequestMethod.GET)
 	public ResponseEntity<?> findNewEntities() {
 		// find and return newly generated entities
-		return new ResponseEntity<List<EntityInformation>>(generatorService.findNewEntities(), HttpStatus.OK);
+		return new ResponseEntity<List<EntityInformation>>(generatorService.findNewEntities(ENTITY_ROOT_PATH, "com.mrg.webapi.model."), HttpStatus.OK);
 	}
 
 	/*******************************/

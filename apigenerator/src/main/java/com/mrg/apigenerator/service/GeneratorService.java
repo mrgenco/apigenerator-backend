@@ -12,25 +12,17 @@ import com.mrg.apigenerator.exception.EntityGenerationException;
 
 public interface GeneratorService {
 	
-//	Iterable<DataSource> list();
-	
-//	DataSource create(DataSource post);
-//	
-//	DataSource read(long id);
-//	
 	DataSource update(long id, DataSource post);
-//	
-//	void delete(long id);
-	
-	List<EntityInformation> generateEntities() throws EntityGenerationException;
-		
-	List<EntityInformation> findNewEntities();
 
 	List<MEntity> generateRepositories(List<MEntity> newEntityList);
 
 	void deploy() throws MavenInvocationException, IOException;
 
-//	void saveNewEntities(List<MEntity> newEntityList);
-//
-//	Iterable<MEntity> findAllEntities();
+
+	List<EntityInformation> findNewEntities(String path, String packageName);
+
+
+	List<EntityInformation> generateEntities(String entityPath, String pomfile, String packageName)
+			throws EntityGenerationException;
+
 }

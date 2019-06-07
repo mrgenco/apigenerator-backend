@@ -78,6 +78,107 @@
 				<artifactId>maven-jar-plugin</artifactId>
 				<version>3.0.2</version>
 			</plugin>
+			
+			<!--Maven plugin for generating entities -->
+			<plugin>
+				<artifactId>maven-antrun-plugin</artifactId>
+				<executions>
+					<execution> <!--mvn antrun:run@hbm2java -->
+						<id>hbm2java</id>
+						<phase>none</phase>
+						<configuration>
+							<target>
+								<echo message="Start generating entities .." />
+								<taskdef name="hibernatetool"
+									classname="org.hibernate.tool.ant.HibernateToolTask" />
+								<hibernatetool>
+								<path id="some.classpath">
+    <fileset dir="lib">
+        <include name="*.jar"/>
+    </fileset>
+    <pathelement location="${MyCommons.proj.path}/MyCommons.jar"/>
+</path>
+									<jdbcconfiguration
+										revengfile="C:\Users\mehme\git\apigenerator-template\apigenerator-template\src\main\resources\hibernate.reveng.xml"
+										reversestrategy="C:\Users\mehme\git\apigenerator\apigenerator\target\classes\com\mrg\apigenerator\ApiGenReverseEngineeringStrategy.class"
+										packagename="com.mrg.webapi.model" detectmanytomany="false"
+										propertyfile="C:\Users\mehme\git\apigenerator-template\apigenerator-template\src\main\resources\hibernate.properties" />
+									<hbm2java destdir="C:\Users\mehme\git\apigenerator-template\apigenerator-template\src\main\java" jdk5="true"
+										ejb3="true" />
+								</hibernatetool>
+								<echo message="End generating entities" />
+							</target>
+						</configuration>
+						<goals>
+							<goal>run</goal>
+						</goals>
+					</execution>
+				</executions>
+				<dependencies>
+					<dependency>
+						<groupId>org.hibernate</groupId>
+						<artifactId>hibernate-core</artifactId>
+						<version>4.3.11.Final</version>
+					</dependency>
+					<dependency>
+						<groupId>org.hibernate</groupId>
+						<artifactId>hibernate-entitymanager</artifactId>
+						<version>4.3.11.Final</version>
+					</dependency>
+					<dependency>
+						<groupId>org.hibernate.common</groupId>
+						<artifactId>hibernate-commons-annotations</artifactId>
+						<version>4.0.5.Final</version>
+					</dependency>
+					<dependency>
+						<groupId>org.hibernate.javax.persistence</groupId>
+						<artifactId>hibernate-jpa-2.1-api</artifactId>
+						<version>1.0.0.Final</version>
+					</dependency>
+					<dependency>
+						<groupId>javax.transaction</groupId>
+						<artifactId>jta</artifactId>
+						<version>1.1</version>
+					</dependency>
+					<dependency>
+						<groupId>freemarker</groupId>
+						<artifactId>freemarker</artifactId>
+						<version>2.3.8</version>
+					</dependency>
+					<dependency>
+						<groupId>org.postgresql</groupId>
+						<artifactId>postgresql</artifactId>
+						<version>9.4.1207.jre7</version>
+					</dependency>
+					<!-- https://mvnrepository.com/artifact/mysql/mysql-connector-java -->
+					<dependency>
+						<groupId>mysql</groupId>
+						<artifactId>mysql-connector-java</artifactId>
+						<version>8.0.16</version>
+					</dependency>
+					<dependency>
+						<groupId>commons-logging</groupId>
+						<artifactId>commons-logging</artifactId>
+						<version>1.1</version>
+					</dependency>
+					<dependency>
+						<groupId>commons-collections</groupId>
+						<artifactId>commons-collections</artifactId>
+						<version>3.2.1</version>
+					</dependency>
+					<dependency>
+						<groupId>org.hibernate</groupId>
+						<artifactId>hibernate-tools</artifactId>
+						<version>4.3.2.Final</version>
+						<exclusions>
+							<exclusion>
+								<groupId>*</groupId>
+								<artifactId>*</artifactId>
+							</exclusion>
+						</exclusions>
+					</dependency>
+				</dependencies>
+			</plugin>
 		</plugins>
 	</build>
 
