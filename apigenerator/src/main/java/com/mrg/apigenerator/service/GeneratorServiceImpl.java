@@ -96,7 +96,11 @@ public class GeneratorServiceImpl implements GeneratorService {
 		try {
 			
 			// Cleaning pregenerated entities
-			FileUtils.cleanDirectory(entityPath);
+			File f = new File(entityPath);
+			if (f.exists() && f.isDirectory()) {
+				FileUtils.cleanDirectory(entityPath);
+			}
+				
 			
 			// CREATING APP.PROPERTIES
 			// writing datasource info to the application.properties for Spring
