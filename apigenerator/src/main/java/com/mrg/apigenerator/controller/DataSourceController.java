@@ -48,7 +48,7 @@ public class DataSourceController {
 	/******** SCAN DATASOURCE START ********/
 	/***************************************/
 	// CREATE DATASOURCE AND CREATE ENTITIES
-	@RequestMapping(value = "/", method = RequestMethod.POST)
+	@RequestMapping(value = "/scan", method = RequestMethod.POST)
 	public ResponseEntity<?> create(@RequestBody DataSource ds) {
 		
 		List<EntityInformation> entityInformationList;
@@ -108,11 +108,6 @@ public class DataSourceController {
 		return post;
 	}
 
-	@RequestMapping(value = "/{id}", method = RequestMethod.PUT)
-	public DataSource update(@PathVariable(value = "id") long id, @RequestBody DataSource ds) {
-		return generatorService.update(id, ds);
-	}
-
 	@RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
 	public void delete(@PathVariable(value = "id") long id) {
 		if(dsRepository.existsById(id)) {
@@ -137,8 +132,6 @@ public class DataSourceController {
 			return "DataSource password can not be empty";
 		if(ds.getProjectName().isEmpty())
 			return "ProjectName can not be empty";
-		if(ds.getName().isEmpty())
-			return "DataSource name can not be empty";
 		return "";		
 	}
 }

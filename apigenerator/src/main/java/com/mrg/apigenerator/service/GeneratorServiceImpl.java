@@ -38,7 +38,6 @@ import com.mrg.apigenerator.domain.DataSource;
 import com.mrg.apigenerator.domain.EntityInformation;
 import com.mrg.apigenerator.domain.Filter;
 import com.mrg.apigenerator.domain.MEntity;
-import com.mrg.apigenerator.exception.DataSourceNotFoundException;
 import com.mrg.apigenerator.exception.EntityGenerationException;
 import com.mrg.apigenerator.repository.DataSourceRepository;
 import com.squareup.javapoet.ClassName;
@@ -56,7 +55,6 @@ import com.squareup.javapoet.TypeSpec;
 public class GeneratorServiceImpl implements GeneratorService {
 
 	private DataSourceRepository dataSourceRepository;
-//	private EntitiesRepository entitiesRepository;
 
 	private InvocationRequest invocationRequest;
 	private Invoker invoker;
@@ -69,23 +67,13 @@ public class GeneratorServiceImpl implements GeneratorService {
 	@Autowired
 	public GeneratorServiceImpl(DataSourceRepository dataSourceRepository) {
 		this.dataSourceRepository = dataSourceRepository;
-//		this.entitiesRepository = entitiesRepository;
 		this.invocationRequest = new DefaultInvocationRequest();
 		this.invoker = new DefaultInvoker();
 	}
 
 	@Override
-	public DataSource update(long id, DataSource update) {
-		DataSource ds = dataSourceRepository.findById(id)
-				.orElseThrow(() -> new DataSourceNotFoundException("DS with id: " + id + " not found."));
-		if (update.getName() != null) {
-			ds.setName(update.getName());
-		}
-		return dataSourceRepository.save(ds);
-	}
-
-	@Override
-	public List<EntityInformation> generateEntities(String entityPath, String pomfile, String packageName) throws EntityGenerationException {
+	public List<EntityInformation> generateEntities(String entityPath, String pomfile, String packageName)
+			throws EntityGenerationException {
 
 		DataSource dataSource = dataSourceRepository.findFirstByIsGeneratedOrderByProcessDateDesc(false);
 		if (dataSource == null) {
@@ -94,10 +82,13 @@ public class GeneratorServiceImpl implements GeneratorService {
 		}
 		byte[] properties = null;
 		try {
-			
+
 			// Cleaning pregenerated entities
-			FileUtils.cleanDirectory(entityPath);
-			
+			File f = new File(entityPath);
+			if (f.exists() && f.isDirectory()) {
+				FileUtils.cleanDirectory(entityPath);
+			}
+
 			// CREATING APP.PROPERTIES
 			// writing datasource info to the application.properties for Spring
 			Files.deleteIfExists(Paths.get(APP_PROPERTIES_PATH));
@@ -113,7 +104,8 @@ public class GeneratorServiceImpl implements GeneratorService {
 
 			// CREATING ENTITIES
 			// generating entity classes by running mvn antrun:run@hbm2java
-			invocationRequest.setPomFile(new File("C:\\Users\\mehme\\git\\apigenerator-template\\apigenerator-template\\" + pomfile));
+			invocationRequest.setPomFile(
+					new File("C:\\Users\\mehme\\git\\apigenerator-template\\apigenerator-template\\" + pomfile));
 			invocationRequest.setGoals(Collections.singletonList("antrun:run@hbm2java"));
 
 			invoker.setMavenHome(new File("D:\\Maven\\apache-maven-3.6.1"));
@@ -166,25 +158,8 @@ public class GeneratorServiceImpl implements GeneratorService {
 		}
 		return newEntityList;
 	}
-
-	private Class loadJavaFileToClassPath(File file, String fileName, String packageName) throws Exception {
-
-		ClassLoader cl;
-		Class cls;
-
-		File projectRootFolder = new File(PROJECT_ROOT_PATH);
-		// Compiling .java to .class files
-		JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-		compiler.run(null, null, null, file.getPath());
-
-		// Loading .class files
-		URL[] urls = new URL[] { projectRootFolder.toURI().toURL() };
-		cl = new URLClassLoader(urls);
-		cls = cl.loadClass(packageName + fileName);
-
-		return cls;
-
-	}
+	
+	
 
 	// TODO : database vendor a göre repository id değeri değişebilir mi? (MySql ->
 	// Integer, Oracle -> Long)
@@ -207,6 +182,8 @@ public class GeneratorServiceImpl implements GeneratorService {
 				JavaFile javaFile = JavaFile.builder("com.mrg.webapi.repository", entityRepository).build();
 				javaFile.writeTo(filePath);
 				entityList.add(entity);
+				
+				
 
 				log.info(entity.getEntityName() + "Repository is generated...");
 			}
@@ -216,6 +193,25 @@ public class GeneratorServiceImpl implements GeneratorService {
 			log.error("Error occured while deploying application : " + ex.getMessage() + ex.getStackTrace());
 		}
 		return entityList;
+
+	}
+
+	private Class loadJavaFileToClassPath(File file, String fileName, String packageName) throws Exception {
+
+		ClassLoader cl;
+		Class cls;
+
+		File projectRootFolder = new File(PROJECT_ROOT_PATH);
+		// Compiling .java to .class files
+		JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+		compiler.run(null, null, null, file.getPath());
+
+		// Loading .class files
+		URL[] urls = new URL[] { projectRootFolder.toURI().toURL() };
+		cl = new URLClassLoader(urls);
+		cls = cl.loadClass(packageName + fileName);
+
+		return cls;
 
 	}
 
@@ -339,6 +335,5 @@ public class GeneratorServiceImpl implements GeneratorService {
 		}
 
 	}
-
 
 }

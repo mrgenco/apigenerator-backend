@@ -12,7 +12,6 @@ import com.mrg.apigenerator.exception.EntityGenerationException;
 
 public interface GeneratorService {
 	
-	DataSource update(long id, DataSource post);
 
 	List<MEntity> generateRepositories(List<MEntity> newEntityList);
 

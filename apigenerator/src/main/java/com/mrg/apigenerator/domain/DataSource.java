@@ -18,7 +18,6 @@ public class DataSource implements Serializable{
 	@GeneratedValue(strategy=GenerationType.AUTO)
 	private Long Id;
 	private String projectName;
-	private String name;
 	private String url;
 	private String username;
 	private String password;
@@ -53,13 +52,7 @@ public class DataSource implements Serializable{
 		this.isGenerated = isGenerated;
 	}
 	
-	public String getName() {
-		return name;
-	}
-	public void setName(String name) {
-		this.name = name;
-	}
-	
+
 	public String getUrl() {
 		return url;
 	}
@@ -89,12 +82,12 @@ public class DataSource implements Serializable{
 	}
 	
 	public byte[] getAppProperties(){
-		String properties = this.name+".datasource.url="+this.url+"\n"
-				  +this.name+".datasource.username="+this.username+"\n"
-				  +this.name+".datasource.password="+this.password+"\n"
-				  +this.name+".datasource.driver-class-name="+"com.mysql.jdbc.Driver"+"\n"
-				  +this.name+".jpa.properties.hibernate.dialect = org.hibernate.dialect.MySQL5Dialect" +"\n"
-				  +this.name+".jpa.properties.hibernate.id.new_generator_mappings=false" +"\n"
+		String properties = "spring.datasource.url="+this.url+"\n"
+				  +"spring.datasource.username="+this.username+"\n"
+				  +"spring.datasource.password="+this.password+"\n"
+				  +"spring.datasource.driver-class-name="+"com.mysql.jdbc.Driver"+"\n"
+				  +"spring.jpa.properties.hibernate.dialect = org.hibernate.dialect.MySQL5Dialect" +"\n"
+				  +"spring.jpa.properties.hibernate.id.new_generator_mappings=false" +"\n"
 				  +"server.port=8080"+"\n\n\n";
 		return properties.getBytes();
 	}
