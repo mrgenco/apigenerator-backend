@@ -53,6 +53,8 @@ public class EntityInformation {
 		return false;
 	}
 
+	
+	
 	public boolean isReallyEquals(Object obj) {
 
 		if (this == obj)
@@ -61,16 +63,16 @@ public class EntityInformation {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-
+		
 		EntityInformation entityInformation = (EntityInformation) obj;
-
-		if (entityInformation.getEntityName().equals(this.getEntityName())
-				&& entityInformation.getFields().equals(this.getFields())) {
+		
+		if (entityInformation.getEntityName().equals(this.getEntityName()) && entityInformation.getFields().equals(this.getFields())) {
 			return true;
 		} else {
-
+			
 		}
 		return false;
 	}
+
 
 }

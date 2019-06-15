@@ -88,7 +88,6 @@ public class GeneratorServiceImpl implements GeneratorService {
 			if (f.exists() && f.isDirectory()) {
 				FileUtils.cleanDirectory(entityPath);
 			}
-
 			// CREATING APP.PROPERTIES
 			// writing datasource info to the application.properties for Spring
 			Files.deleteIfExists(Paths.get(APP_PROPERTIES_PATH));
